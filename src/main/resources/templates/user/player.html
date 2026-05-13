@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title th:text="${video.title} + ' — Ramdev'">Watch Video</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&family=Rajdhani:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/user.css}"/>
+  <link rel="stylesheet" th:href="@{/css/player.css}"/>
+</head>
+<body>
+
+<header class="user-header">
+  <div class="hdr-inner">
+    <a th:href="@{/user/home}" class="back-btn">← Back</a>
+    <div class="hdr-brand">
+      <span class="hdr-ico">🌾</span>
+      <div class="hdr-title">Ramdev Thresher</div>
+    </div>
+    <div class="hdr-right">
+      <a th:href="@{/user/contact}" class="hdr-nav-link">📞 Contact</a>
+      <a th:href="@{/logout}" class="hdr-logout">⏻ Logout</a>
+    </div>
+  </div>
+</header>
+
+<div class="player-page">
+  <div class="player-wrap">
+    <div class="protect-bar">
+      🔒 This video is protected. Download and screen-recording are disabled.
+    </div>
+    <video id="ramdevPlayer"
+           th:src="${video.filePath}"
+           controls
+           controlsList="nodownload nofullscreen"
+           disablePictureInPicture
+           oncontextmenu="return false;"
+           playsinline
+           class="main-player"
+           preload="metadata">
+      Your browser does not support HTML5 video.
+    </video>
+  </div>
+
+  <div class="player-info">
+    <h1 class="player-title" th:text="${video.title}">Title</h1>
+    <p th:if="${video.titleGuj}" class="player-guj"
+       style="font-family:'Noto Sans Gujarati',sans-serif;"
+       th:text="${video.titleGuj}">ગુજ</p>
+    <div class="player-meta">
+      <span th:if="${video.category}" class="badge-cat" th:text="${video.category}">Cat</span>
+      <span th:text="${#temporals.format(video.createdAt,'dd MMM yyyy')}">Date</span>
+    </div>
+    <p th:if="${video.description}" class="player-desc" th:text="${video.description}">Desc</p>
+  </div>
+</div>
+
+<script th:src="@{/js/protect.js}"></script>
+<script>
+var vid = document.getElementById('ramdevPlayer');
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && ['s','u','p'].includes(e.key)) e.preventDefault();
+});
+function togglePlay() { vid.paused ? vid.play() : vid.pause(); }
+</script>
+
+<!-- Mobile bottom nav -->
+<nav class="mobile-bottom-nav">
+  <a th:href="@{/user/home}">
+    <span class="nav-icon">🎬</span>Videos
+  </a>
+  <a th:href="@{/user/contact}">
+    <span class="nav-icon">📞</span>Contact
+  </a>
+  <a th:href="@{/logout}" class="logout-nav">
+    <span class="nav-icon">⏻</span>Logout
+  </a>
+</nav>
+</body>
+</html>

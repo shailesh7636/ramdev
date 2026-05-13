@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Ramdev Thresher — Videos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&family=Rajdhani:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/user.css}"/>
+</head>
+<body>
+
+<header class="user-header">
+  <div class="hdr-inner">
+    <div class="hdr-brand">
+      <span class="hdr-ico">🌾</span>
+      <div>
+        <div class="hdr-title">Jai Ramdev Agriculture</div>
+        <div class="hdr-sub" style="font-family:'Noto Sans Gujarati',sans-serif;">જય રામદેવ એગ્રીકલ્ચર</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <a th:href="@{/user/home}"    class="hdr-nav-link">🎬 Videos</a>
+      <a th:href="@{/user/contact}" class="hdr-nav-link">📞 Contact</a>
+      <span class="user-badge" th:text="${me?.name}">User</span>
+      <a th:href="@{/logout}" class="hdr-logout">⏻ Logout</a>
+    </div>
+  </div>
+</header>
+
+<main class="user-main">
+  <div class="feed-header">
+    <h2>Videos</h2>
+    <span class="count-badge" th:text="${videos?.size() ?: 0} + ' videos'">0 videos</span>
+  </div>
+
+  <div class="video-grid">
+    <a th:each="v : ${videos}" th:href="@{/user/watch/{id}(id=${v.id})}" class="vcard">
+      <div class="vcard-thumb">
+        <img th:if="${v.thumbnail}" th:src="${v.thumbnail}" alt="thumb" loading="lazy"/>
+        <div th:unless="${v.thumbnail}" class="vcard-placeholder">▶</div>
+        <div class="no-dl-badge">🚫 No Download</div>
+        <span th:if="${v.category}" class="vcard-cat" th:text="${v.category}">Cat</span>
+      </div>
+      <div class="vcard-info">
+        <div class="vcard-title" th:text="${v.title}">Title</div>
+        <div th:if="${v.titleGuj}" class="vcard-guj"
+             style="font-family:'Noto Sans Gujarati',sans-serif;"
+             th:text="${v.titleGuj}">ગુજ</div>
+        <div class="vcard-date" th:text="${#temporals.format(v.createdAt,'dd MMM yyyy')}">Date</div>
+      </div>
+    </a>
+  </div>
+
+  <div th:if="${videos == null or videos.empty}" class="empty-state">
+    <div class="empty-icon">📹</div>
+    <p>No videos available yet.</p>
+  </div>
+</main>
+
+<script th:src="@{/js/protect.js}"></script>
+
+<!-- Mobile bottom nav -->
+<nav class="mobile-bottom-nav">
+  <a th:href="@{/user/home}" class="active">
+    <span class="nav-icon">🎬</span>Videos
+  </a>
+  <a th:href="@{/user/contact}">
+    <span class="nav-icon">📞</span>Contact
+  </a>
+  <a th:href="@{/logout}" class="logout-nav">
+    <span class="nav-icon">⏻</span>Logout
+  </a>
+</nav>
+</body>
+</html>
