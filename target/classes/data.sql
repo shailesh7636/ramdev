@@ -1,0 +1,4 @@
+-- This file is intentionally empty.
+-- Seed data is managed entirely by DataSeeder.java (Spring Boot CommandLineRunner).
+-- Having INSERT statements here AND in DataSeeder caused duplicate-key errors.
+-- spring.sql.init.mode=never ensures this file is ignored anyway.

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Contact — Ramdev Thresher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&family=Rajdhani:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/user.css}"/>
+  <style>
+    .contact-page  { max-width:700px; margin:0 auto; padding:20px 14px; }
+    .contact-card  { background:#fff; border-radius:20px; box-shadow:0 4px 20px rgba(0,0,0,.09); overflow:hidden; margin-bottom:20px; }
+    .contact-banner{ background:linear-gradient(135deg,#0e2460,#1a3a8f); padding:28px 24px; text-align:center; color:#fff; }
+    .contact-banner .banner-icon { font-size:48px; margin-bottom:10px; }
+    .contact-banner h2 { font-family:'Rajdhani',sans-serif; font-size:24px; font-weight:700; margin-bottom:4px; }
+    .contact-banner .guj { font-family:'Noto Sans Gujarati',sans-serif; font-size:13px; color:rgba(255,255,255,.7); }
+    .contact-body  { padding:20px 22px; }
+    .info-row      { display:flex; align-items:flex-start; gap:14px; padding:14px 0; border-bottom:1px solid #f0f0f0; }
+    .info-row:last-child { border-bottom:none; }
+    .info-icon     { width:42px; height:42px; background:rgba(26,58,143,.08); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .info-label    { font-size:11px; color:#888; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+    .info-value    { font-size:14px; font-weight:600; color:#1a1a1a; word-break:break-word; }
+    .info-value a  { color:#1a3a8f; text-decoration:none; }
+    .info-value a:hover { text-decoration:underline; }
+    .info-sub      { font-size:12px; color:#888; margin-top:2px; }
+    .hours-card    { background:#fff; border-radius:20px; box-shadow:0 4px 20px rgba(0,0,0,.09); padding:22px; }
+    .hours-card h3 { font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700; margin-bottom:14px; color:#1a3a8f; }
+    .hours-row     { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; padding:8px 0; border-bottom:1px solid #f5f5f5; font-size:14px; }
+    .hours-row:last-child { border-bottom:none; }
+    .hours-row .day  { color:#555; }
+    .hours-row .time { font-weight:600; color:#1a1a1a; }
+    .open-badge    { background:#e8f5e9; color:#2e7d32; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; }
+  </style>
+</head>
+<body>
+
+<header class="user-header">
+  <div class="hdr-inner">
+    <a th:href="@{/user/home}" class="back-btn">← Back</a>
+    <div class="hdr-brand">
+      <span class="hdr-ico">🌾</span>
+      <div>
+        <div class="hdr-title">Jai Ramdev Agriculture</div>
+        <div class="hdr-sub" style="font-family:'Noto Sans Gujarati',sans-serif;">જય રામદેવ એગ્રીકલ્ચર</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <a th:href="@{/user/home}" class="hdr-nav-link">🎬 Videos</a>
+      <span class="user-badge" th:text="${me?.name}">User</span>
+      <a th:href="@{/logout}" class="hdr-logout">⏻ Logout</a>
+    </div>
+  </div>
+</header>
+
+<div class="contact-page">
+  <div class="contact-card">
+    <div class="contact-banner">
+      <div class="banner-icon">🌾</div>
+      <h2>Jai Ramdev Agriculture</h2>
+      <div class="guj">જય રામદેવ એગ્રીકલ્ચર — હળવદ, મોરબી</div>
+    </div>
+    <div class="contact-body">
+      <div class="info-row">
+        <div class="info-icon">👤</div>
+        <div>
+          <div class="info-label">Owner</div>
+          <div class="info-value">Mukeshbhai (Owner)</div>
+          <div class="info-sub">Proprietor, Jai Ramdev Agriculture</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">📞</div>
+        <div>
+          <div class="info-label">Phone / WhatsApp</div>
+          <div class="info-value"><a href="tel:+916952939447">+91 69529 39447</a></div>
+          <div class="info-sub">Available on WhatsApp</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">📍</div>
+        <div>
+          <div class="info-label">Address</div>
+          <div class="info-value">Halwad, Morbi District</div>
+          <div class="info-sub">Gujarat, India</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">🏭</div>
+        <div>
+          <div class="info-label">Products</div>
+          <div class="info-value">Thresher Machines</div>
+          <div class="info-sub">Premium agricultural threshers trusted by farmers across Gujarat</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hours-card">
+    <h3>🕐 Business Hours</h3>
+    <div class="hours-row">
+      <span class="day">Monday – Saturday</span>
+      <span class="time">9:00 AM – 7:00 PM <span class="open-badge">Open</span></span>
+    </div>
+    <div class="hours-row">
+      <span class="day">Sunday</span>
+      <span class="time">10:00 AM – 4:00 PM</span>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/protect.js}"></script>
+
+<!-- Mobile bottom nav -->
+<nav class="mobile-bottom-nav">
+  <a th:href="@{/user/home}">
+    <span class="nav-icon">🎬</span>Videos
+  </a>
+  <a th:href="@{/user/contact}" class="active">
+    <span class="nav-icon">📞</span>Contact
+  </a>
+  <a th:href="@{/logout}" class="logout-nav">
+    <span class="nav-icon">⏻</span>Logout
+  </a>
+</nav>
+</body>
+</html>

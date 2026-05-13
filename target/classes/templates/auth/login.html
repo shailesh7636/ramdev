@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Login — Ramdev Thresher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/login.css}"/>
+</head>
+<body>
+
+<div class="login-shell">
+  <!-- Left panel — brand (hidden on mobile) -->
+  <div class="login-brand">
+    <div class="brand-orb">🌾</div>
+    <h1 class="brand-title">Jai Ramdev<br/>Agriculture</h1>
+    <p class="brand-guj" style="font-family:'Noto Sans Gujarati',sans-serif;">
+      જય રામદેવ એગ્રીકલ્ચર
+    </p>
+    <p class="brand-desc">Premium thresher machines crafted in Halwad, Morbi — trusted by farmers across Gujarat.</p>
+    <div class="brand-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <!-- Right panel — form -->
+  <div class="login-form-panel">
+    <div class="form-card">
+      <div class="form-header">
+        <div class="form-icon">🔐</div>
+        <h2>Admin Portal</h2>
+        <p>Sign in with your mobile number</p>
+      </div>
+
+      <div th:if="${error}" class="form-error">
+        <span>⚠</span> <span th:text="${error}">Invalid mobile number and password.</span>
+      </div>
+      <div th:if="${param.logout}" class="form-info">
+        ✓ You have been logged out.
+      </div>
+
+      <form th:action="@{/login}" method="post" th:object="${loginRequest}" autocomplete="off">
+        <div class="field-group">
+          <label for="mobile">Mobile Number</label>
+          <div class="field-wrap">
+            <span class="field-prefix">+91</span>
+            <input id="mobile" type="tel" th:field="*{mobile}"
+                   placeholder="10-digit number"
+                   maxlength="10" inputmode="numeric"
+                   autofocus autocomplete="off"/>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="password">Password</label>
+          <div class="field-wrap">
+            <span class="field-prefix">🔒</span>
+            <input id="password" type="password" th:field="*{password}"
+                   placeholder="Enter password" autocomplete="current-password"/>
+            <button type="button" class="toggle-pass" onclick="togglePass()">👁</button>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn">Sign In →</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePass() {
+  var f = document.getElementById('password');
+  f.type = f.type === 'password' ? 'text' : 'password';
+}
+document.getElementById('mobile').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '').slice(0, 10);
+});
+</script>
+</body>
+</html>
