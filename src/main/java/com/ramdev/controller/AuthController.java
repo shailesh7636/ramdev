@@ -97,6 +97,12 @@ public class AuthController {
         return "redirect:/login?logout";
     }
 
+    /** Privacy Policy — public, no login required */
+    @GetMapping("/privacy-policy")
+    public String privacyPolicy() {
+        return "privacy-policy";
+    }
+
     /**
      * Access-denied page.
      * Spring Security calls this when a USER tries to visit /admin/**

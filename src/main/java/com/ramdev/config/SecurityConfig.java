@@ -69,7 +69,7 @@ public class SecurityConfig {
                 // ── Public ──────────────────────────────────────────
                 .requestMatchers(
                     "/", "/login", "/logout",
-                    "/access-denied",
+                    "/access-denied", "/privacy-policy",
                     "/css/**", "/js/**", "/images/**",
                     "/favicon.ico", "/error"
                 ).permitAll()
