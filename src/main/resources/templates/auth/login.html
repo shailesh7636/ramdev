@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <title>Login — Ramdev Thresher</title>
+  <title>Login — Jai Ramdev Agriculture</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" th:href="@{/css/login.css}"/>
@@ -11,40 +11,57 @@
 <body>
 
 <div class="login-shell">
-  <!-- Left panel — brand (hidden on mobile) -->
+
+  <!-- Left panel — brand -->
   <div class="login-brand">
-    <div class="brand-orb">🌾</div>
-    <h1 class="brand-title">Jai Ramdev<br/>Agriculture</h1>
-    <p class="brand-guj" style="font-family:'Noto Sans Gujarati',sans-serif;">
-      જય રામદેવ એગ્રીકલ્ચર
-    </p>
-    <p class="brand-desc">Premium thresher machines crafted in Halwad, Morbi — trusted by farmers across Gujarat.</p>
-    <div class="brand-dots">
-      <span></span><span></span><span></span>
+    <div class="brand-glow"></div>
+    <div class="brand-content">
+      <div class="brand-orb">🌾</div>
+      <h1 class="brand-title">Jai Ramdev<br/>Agriculture</h1>
+      <p class="brand-guj" style="font-family:'Noto Sans Gujarati',sans-serif;">
+        જય રામદેવ એગ્રીકલ્ચર
+      </p>
+      <p class="brand-desc">Premium thresher machines crafted in Halwad, Morbi — trusted by farmers across Gujarat.</p>
+      <div class="brand-stats">
+        <div class="bstat"><div class="bstat-val">100+</div><div class="bstat-lbl">Videos</div></div>
+        <div class="bstat-div"></div>
+        <div class="bstat"><div class="bstat-val">Gujarat</div><div class="bstat-lbl">Coverage</div></div>
+        <div class="bstat-div"></div>
+        <div class="bstat"><div class="bstat-val">Secure</div><div class="bstat-lbl">Portal</div></div>
+      </div>
     </div>
   </div>
 
   <!-- Right panel — form -->
   <div class="login-form-panel">
     <div class="form-card">
+
       <div class="form-header">
-        <div class="form-icon">🔐</div>
-        <h2>Admin Portal</h2>
-        <p>Sign in with your mobile number</p>
+        <div class="form-logo">🌾</div>
+        <h2>Welcome Back</h2>
+        <p>Sign in to your account</p>
       </div>
 
-      <div th:if="${error}" class="form-error">
-        <span>⚠</span> <span th:text="${error}">Invalid mobile number and password.</span>
+      <!-- Error message (auto-dismiss) -->
+      <div th:if="${error}" class="alert alert-error" id="alertMsg">
+        <span class="alert-icon">⚠</span>
+        <span th:text="${error}">Invalid credentials.</span>
+        <button class="alert-close" onclick="dismissAlert()">&times;</button>
       </div>
-      <div th:if="${param.logout}" class="form-info">
-        ✓ You have been logged out.
+
+      <!-- Logout success message (auto-dismiss) -->
+      <div th:if="${param.logout}" class="alert alert-success" id="alertMsg">
+        <span class="alert-icon">✓</span>
+        <span>You have been logged out successfully.</span>
+        <button class="alert-close" onclick="dismissAlert()">&times;</button>
       </div>
 
       <form th:action="@{/login}" method="post" th:object="${loginRequest}" autocomplete="off">
+
         <div class="field-group">
           <label for="mobile">Mobile Number</label>
           <div class="field-wrap">
-            <span class="field-prefix">+91</span>
+            <span class="field-prefix">📱 +91</span>
             <input id="mobile" type="tel" th:field="*{mobile}"
                    placeholder="10-digit number"
                    maxlength="10" inputmode="numeric"
@@ -57,17 +74,23 @@
           <div class="field-wrap">
             <span class="field-prefix">🔒</span>
             <input id="password" type="password" th:field="*{password}"
-                   placeholder="Enter password" autocomplete="current-password"/>
-            <button type="button" class="toggle-pass" onclick="togglePass()">👁</button>
+                   placeholder="Enter your password"
+                   autocomplete="current-password"/>
+            <button type="button" class="toggle-pass" onclick="togglePass()" title="Show/hide password">👁</button>
           </div>
         </div>
 
-        <button type="submit" class="submit-btn">Sign In →</button>
+        <button type="submit" class="submit-btn">
+          <span>Sign In</span>
+          <span class="btn-arrow">→</span>
+        </button>
+
       </form>
 
       <div class="form-footer">
-        <a href="/privacy-policy" target="_blank">Privacy Policy</a>
+        <a href="/privacy-policy" target="_blank">🔏 Privacy Policy</a>
       </div>
+
     </div>
   </div>
 </div>
@@ -79,6 +102,20 @@ function togglePass() {
 }
 document.getElementById('mobile').addEventListener('input', function() {
   this.value = this.value.replace(/\D/g, '').slice(0, 10);
+});
+// Auto-dismiss alert after 3 seconds
+function dismissAlert() {
+  var el = document.getElementById('alertMsg');
+  if (el) {
+    el.classList.add('alert-hide');
+    setTimeout(function() { el.remove(); }, 400);
+  }
+}
+window.addEventListener('DOMContentLoaded', function() {
+  var el = document.getElementById('alertMsg');
+  if (el) {
+    setTimeout(function() { dismissAlert(); }, 3000);
+  }
 });
 </script>
 </body>

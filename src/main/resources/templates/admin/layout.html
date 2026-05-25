@@ -76,14 +76,42 @@
   </div>
 
   <div class="content-body">
-    <div th:if="${success}" class="flash flash-ok" th:text="${success}"></div>
-    <div th:if="${error}"   class="flash flash-err" th:text="${error}"></div>
+    <div th:if="${success}" class="flash flash-ok">
+      <span class="flash-icon">✓</span>
+      <span th:text="${success}"></span>
+      <button class="flash-close" aria-label="Close">&times;</button>
+    </div>
+    <div th:if="${error}" class="flash flash-err">
+      <span class="flash-icon">⚠</span>
+      <span th:text="${error}"></span>
+      <button class="flash-close" aria-label="Close">&times;</button>
+    </div>
     <th:block th:replace="${content}"/>
   </div>
 </main>
 
 <script th:src="@{/js/dashboard.js}"></script>
 <script>
+// Auto-dismiss flash messages after 3 seconds
+(function() {
+  var flashes = document.querySelectorAll('.flash');
+  flashes.forEach(function(flash) {
+    function dismiss() {
+      flash.style.opacity = '0';
+      flash.style.transform = 'translateY(-10px)';
+      flash.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      setTimeout(function() {
+        if (flash.parentNode) flash.parentNode.removeChild(flash);
+      }, 420);
+    }
+    // Auto dismiss after 3 seconds
+    setTimeout(dismiss, 3000);
+    // Manual close button
+    var closeBtn = flash.querySelector('.flash-close');
+    if (closeBtn) closeBtn.addEventListener('click', dismiss);
+  });
+}());
+
 function toggleSidebar() {
   var sidebar = document.getElementById('sidebar');
   var overlay = document.getElementById('sidebarOverlay');

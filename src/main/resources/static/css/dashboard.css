@@ -143,22 +143,57 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 /* Flash messages */
 .flash {
-  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
   border-radius: 10px;
   font-size: 13px;
   margin-bottom: 20px;
   font-weight: 500;
+  animation: flashSlideIn 0.3s ease;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
+.flash-hide {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+@keyframes flashSlideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.flash-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.flash span:not(.flash-icon) {
+  flex: 1;
+}
+.flash-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.flash-close:hover { opacity: 1; }
 .flash-ok {
   background: rgba(74,222,128,0.1);
   border: 1px solid rgba(74,222,128,0.3);
   color: #6ee7b7;
 }
+.flash-ok .flash-close { color: #6ee7b7; }
 .flash-err {
   background: rgba(224,82,82,0.1);
   border: 1px solid rgba(224,82,82,0.3);
   color: #fca5a5;
 }
+.flash-err .flash-close { color: #fca5a5; }
 
 /* ── Stats ─── */
 .stats-row {
