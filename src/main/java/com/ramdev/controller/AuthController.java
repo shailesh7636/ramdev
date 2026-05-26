@@ -4,6 +4,7 @@ import com.ramdev.dto.LoginRequest;
 import com.ramdev.entity.User;
 import com.ramdev.repository.UserRepository;
 import com.ramdev.service.AuthService;
+import com.ramdev.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class AuthController {
 
     private final AuthService    authService;
     private final UserRepository userRepository;
+    private final UserService    userService;
 
     /** Root → login page */
     @GetMapping("/")
@@ -101,6 +104,34 @@ public class AuthController {
     @GetMapping("/privacy-policy")
     public String privacyPolicy() {
         return "privacy-policy";
+    }
+
+    /** Delete Account page — public */
+    @GetMapping("/delete-account")
+    public String deleteAccountPage() {
+        return "delete-account";
+    }
+
+    /** Process account deletion by mobile number */
+    @PostMapping("/delete-account")
+    public String deleteAccount(@RequestParam String mobile, RedirectAttributes ra) {
+        mobile = mobile.trim();
+        if (!mobile.matches("\\d{10}")) {
+            ra.addFlashAttribute("error", "Please enter a valid 10-digit mobile number.");
+            return "redirect:/delete-account";
+        }
+        User user = userRepository.findByMobile(mobile).orElse(null);
+        if (user == null) {
+            ra.addFlashAttribute("error", "No account found with this mobile number.");
+            return "redirect:/delete-account";
+        }
+        if (user.hasRole("SUPER_ADMIN")) {
+            ra.addFlashAttribute("error", "This account cannot be deleted.");
+            return "redirect:/delete-account";
+        }
+        userService.deleteUser(user.getId());
+        ra.addFlashAttribute("success", "Your account has been deleted successfully.");
+        return "redirect:/delete-account";
     }
 
     /**
