@@ -14,14 +14,18 @@ public class AuthService {
     private final AuthenticationManager authManager;
     private final JwtUtils jwtUtils;
 
+    public record LoginResult(String token, Authentication auth) {}
+
     /**
      * Authenticates with mobile number (used as username) + password.
+     * Returns both the JWT token and the Authentication so the caller
+     * can read roles without an extra DB call.
      * Throws BadCredentialsException if credentials are wrong.
      */
-    public String login(LoginRequest req) {
+    public LoginResult login(LoginRequest req) {
         Authentication auth = authManager.authenticate(
             new UsernamePasswordAuthenticationToken(req.getMobile(), req.getPassword())
         );
-        return jwtUtils.generateToken(auth);
+        return new LoginResult(jwtUtils.generateToken(auth), auth);
     }
 }

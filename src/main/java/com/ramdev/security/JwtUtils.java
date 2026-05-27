@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
@@ -25,17 +26,26 @@ public class JwtUtils {
     private int jwtExpirationMs;
 
     private Key key() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(Authentication auth) {
         UserDetails principal = (UserDetails) auth.getPrincipal();
+        String roles = principal.getAuthorities().stream()
+            .map(a -> a.getAuthority())
+            .collect(java.util.stream.Collectors.joining(","));
         return Jwts.builder()
             .setSubject(principal.getUsername())
+            .claim("roles", roles)
             .setIssuedAt(new Date())
             .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
             .signWith(key(), SignatureAlgorithm.HS256)
             .compact();
+    }
+
+    public String getRolesFromToken(String token) {
+        return (String) Jwts.parserBuilder().setSigningKey(key()).build()
+            .parseClaimsJws(token).getBody().get("roles");
     }
 
     public String getMobileFromToken(String token) {
@@ -48,7 +58,7 @@ public class JwtUtils {
             Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            log.warn("Invalid JWT: {}", e.getMessage());
+            log.warn("Invalid JWT: {}", e.getMessage(), e);
             return false;
         }
     }

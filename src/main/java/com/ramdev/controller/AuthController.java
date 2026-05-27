@@ -62,19 +62,25 @@ public class AuthController {
         }
 
         try {
-            String token = authService.login(req);
+            AuthService.LoginResult result = authService.login(req);
 
-            // Secure, HttpOnly cookie — JS cannot read it
-            Cookie cookie = new Cookie("JWT", token);
+            // Secure, HttpOnly cookie with SameSite=Strict — JS cannot read it
+            Cookie cookie = new Cookie("JWT", result.token());
             cookie.setHttpOnly(true);
-            cookie.setSecure(true);    // HTTPS on Render
+            cookie.setSecure(true);          // HTTPS on Render
             cookie.setPath("/");
-            cookie.setMaxAge(7 * 24 * 3600);   // 7 days
+            cookie.setMaxAge(7 * 24 * 3600); // 7 days
+            cookie.setAttribute("SameSite", "Strict");
             response.addCookie(cookie);
 
-            // Role-based redirect — THE KEY RBAC SEPARATION
-            User user = userRepository.findByMobile(req.getMobile()).orElseThrow();
-            String destination = switch (user.getPrimaryRole()) {
+            // Role-based redirect — read from Authentication (no extra DB call)
+            String primaryRole = result.auth().getAuthorities().stream()
+                .map(a -> a.getAuthority())
+                .filter(a -> a.startsWith("ROLE_"))
+                .map(a -> a.replace("ROLE_", ""))
+                .findFirst().orElse("USER");
+
+            String destination = switch (primaryRole) {
                 case "SUPER_ADMIN" -> "/admin/super/dashboard";
                 case "ADMIN"       -> "/admin/dashboard";
                 default            -> "/user/home";

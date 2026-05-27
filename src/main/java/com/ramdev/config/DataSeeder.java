@@ -28,7 +28,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
-    private final RoleRepository roleRepository;
+    private final RoleRepository  roleRepository;
     private final UserRepository  userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -58,16 +58,22 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedDefaultUser(String mobile, String name, String roleName) {
+        // Skip entirely if user already exists — avoids BCrypt encode on every restart
+        if (userRepository.findByMobile(mobile).isPresent()) {
+            log.info("[DataSeeder] {} already exists, skipping → mobile: {}", roleName, mobile);
+            return;
+        }
+
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new IllegalStateException(roleName + " role missing after seed"));
 
-        User user = userRepository.findByMobile(mobile).orElseGet(User::new);
+        User user = new User();
         user.setName(name);
         user.setMobile(mobile);
         user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
         user.setRoles(new HashSet<>(Set.of(role)));
 
         userRepository.save(user);
-        log.info("[DataSeeder] {} ready → mobile: {}", roleName, mobile);
+        log.info("[DataSeeder] {} created → mobile: {}", roleName, mobile);
     }
 }
