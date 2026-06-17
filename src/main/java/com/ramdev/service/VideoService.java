@@ -34,72 +34,46 @@ public class VideoService {
     }
 
     /**
-     * Uploads the video (and optional thumbnail) to Cloudinary, then
-     * persists the metadata — including the Cloudinary public_id — to
-     * Supabase (PostgreSQL).
-     *
-     * If the Supabase INSERT fails, the already-uploaded Cloudinary asset
-     * is deleted to avoid orphaned media files.
+     * Saves video metadata after browser has uploaded the video directly to Cloudinary.
+     * Server never touches the video file — only saves title, url, public_id to DB.
+     * Thumbnail is still uploaded via server (small file, fast).
      */
     @Transactional
-    public Video addVideo(String title, String titleGuj, String description,
-                          String category, MultipartFile videoFile,
-                          MultipartFile thumbnail, String uploaderMobile) throws IOException {
+    public Video addVideoFromCloudinary(String title, String titleGuj, String description,
+                                        String category, String videoUrl, String publicId,
+                                        MultipartFile thumbnail, String uploaderMobile) throws IOException {
 
-        if (videoFile == null || videoFile.isEmpty()) {
-            throw new IllegalArgumentException("A video file must be selected.");
-        }
-
-        // ── Upload video to Cloudinary ──────────────────────────────
-        Map<String, Object> videoResult;
-        try {
-            videoResult = cloudinaryService.uploadVideo(videoFile);
-        } catch (IOException e) {
-            log.error("Cloudinary video upload failed: {}", e.getMessage());
-            throw new IOException("Video upload to Cloudinary failed: " + e.getMessage(), e);
-        }
-
-        String videoUrl      = (String) videoResult.get("secure_url");
-        String videoPublicId = (String) videoResult.get("public_id");
-
-        // ── Upload thumbnail (optional) ─────────────────────────────
+        // Upload thumbnail via server (small image, fast)
         String thumbUrl = null;
         if (thumbnail != null && !thumbnail.isEmpty()) {
             try {
                 Map<String, Object> thumbResult = cloudinaryService.uploadThumbnail(thumbnail);
                 thumbUrl = (String) thumbResult.get("secure_url");
             } catch (IOException e) {
-                // Non-fatal: log and continue without thumbnail
                 log.warn("Thumbnail upload failed (video will still be saved): {}", e.getMessage());
             }
         }
 
-        // ── Resolve uploader ────────────────────────────────────────
         User uploader = userRepository.findByMobile(uploaderMobile).orElse(null);
 
-        // ── Persist to Supabase ─────────────────────────────────────
         Video v = new Video();
         v.setTitle(title);
         v.setTitleGuj(titleGuj);
         v.setDescription(description);
         v.setCategory(category);
         v.setFilePath(videoUrl);
-        v.setCloudinaryPublicId(videoPublicId);
+        v.setCloudinaryPublicId(publicId);
         v.setThumbnail(thumbUrl);
         v.setUploadedBy(uploader);
 
         try {
             Video saved = videoRepository.save(v);
-            log.info("Video '{}' saved to Supabase (Cloudinary id: {})", title, videoPublicId);
+            log.info("Video '{}' saved (Cloudinary id: {})", title, publicId);
             return saved;
         } catch (DataAccessException dbEx) {
-            // DB insert failed — roll back the Cloudinary upload to avoid orphans
-            log.error("Supabase insert failed for '{}', rolling back Cloudinary asset: {}",
-                      title, dbEx.getMessage());
-            cloudinaryService.deleteVideo(videoPublicId);
-            throw new RuntimeException(
-                "Failed to save video metadata to the database. " +
-                "The Cloudinary upload has been rolled back. Please try again.", dbEx);
+            log.error("DB insert failed for '{}', rolling back Cloudinary asset: {}", title, dbEx.getMessage());
+            cloudinaryService.deleteVideo(publicId);
+            throw new RuntimeException("Failed to save video metadata. Cloudinary upload rolled back.", dbEx);
         }
     }
 

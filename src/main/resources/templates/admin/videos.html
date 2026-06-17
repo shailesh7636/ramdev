@@ -2,41 +2,102 @@
 <html lang="en"
       xmlns:th="http://www.thymeleaf.org"
       th:replace="~{admin/layout :: layout(~{::content}, ~{::extraHead}, 'Video Management', 'videos')}">
-<th:block th:fragment="extraHead"></th:block>
+
+<th:block th:fragment="extraHead">
+<style>
+/* ── Upload progress UI ── */
+.upload-progress-wrap {
+  display: none;
+  margin-top: 12px;
+}
+.upload-progress-wrap.show { display: block; }
+.progress-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #3a6fd8, #f5c518);
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+.progress-label {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 6px;
+  text-align: center;
+}
+.upload-status {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+  text-align: center;
+  min-height: 20px;
+}
+.upload-status.success { color: #4ade80; }
+.upload-status.error   { color: #e05252; }
+</style>
+</th:block>
+
 <th:block th:fragment="content">
 
   <div class="two-col">
     <!-- Upload form -->
     <div class="section-card">
       <div class="section-hdr"><h3>📤 Upload Video</h3></div>
-      <form th:action="@{/admin/videos/add}" method="post"
-            enctype="multipart/form-data" class="form-stack">
+      <form id="uploadForm" class="form-stack">
         <div class="field-group">
           <label>Title (English)</label>
-          <input type="text" name="title" placeholder="e.g. Ramdev Thresher — Field Demo" required/>
+          <input type="text" id="title" placeholder="e.g. Ramdev Thresher — Field Demo" required/>
         </div>
         <div class="field-group">
           <label>Title (Gujarati, optional)</label>
-          <input type="text" name="titleGuj" placeholder="ગુજરાતી શીર્ષક"
+          <input type="text" id="titleGuj" placeholder="ગુજરાતી શીર્ષક"
                  style="font-family:'Noto Sans Gujarati',sans-serif"/>
         </div>
         <div class="field-group">
           <label>Category</label>
-          <input type="text" name="category" placeholder="e.g. Demo, Overview, Loading"/>
+          <input type="text" id="category" placeholder="e.g. Demo, Overview, Loading"/>
         </div>
         <div class="field-group">
           <label>Description</label>
-          <textarea name="description" rows="3" placeholder="Short description..."></textarea>
+          <textarea id="description" rows="3" placeholder="Short description..."></textarea>
         </div>
         <div class="field-group">
           <label>Video File (MP4)</label>
-          <input type="file" name="videoFile" accept="video/*" required/>
+          <input type="file" id="videoFile" accept="video/*" required/>
         </div>
         <div class="field-group">
           <label>Thumbnail (optional)</label>
-          <input type="file" name="thumbnail" accept="image/*"/>
+          <input type="file" id="thumbnail" name="thumbnail" accept="image/*"/>
         </div>
-        <button type="submit" class="btn-primary">Upload Video</button>
+
+        <!-- Progress bar -->
+        <div class="upload-progress-wrap" id="progressWrap">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-label" id="progressLabel">0%</div>
+          <div class="upload-status" id="uploadStatus"></div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="uploadBtn">Upload Video</button>
+      </form>
+
+      <!-- Hidden form posted to server after Cloudinary upload -->
+      <form id="metaForm" th:action="@{/admin/videos/add}" method="post"
+            enctype="multipart/form-data" style="display:none;">
+        <input type="hidden" name="title"       id="m_title"/>
+        <input type="hidden" name="titleGuj"    id="m_titleGuj"/>
+        <input type="hidden" name="description" id="m_description"/>
+        <input type="hidden" name="category"    id="m_category"/>
+        <input type="hidden" name="videoUrl"    id="m_videoUrl"/>
+        <input type="hidden" name="publicId"    id="m_publicId"/>
+        <input type="file"   name="thumbnail"   id="m_thumbnail" style="display:none;"/>
       </form>
     </div>
 
@@ -67,6 +128,98 @@
       <div th:if="${videos == null or videos.empty}" class="empty-cell">No videos yet.</div>
     </div>
   </div>
+
+<script>
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  var videoFile = document.getElementById('videoFile').files[0];
+  if (!videoFile) return;
+
+  var btn = document.getElementById('uploadBtn');
+  btn.disabled = true;
+  btn.textContent = 'Uploading...';
+
+  var progressWrap = document.getElementById('progressWrap');
+  var progressFill = document.getElementById('progressFill');
+  var progressLabel = document.getElementById('progressLabel');
+  var uploadStatus  = document.getElementById('uploadStatus');
+
+  progressWrap.classList.add('show');
+  uploadStatus.textContent = '';
+  uploadStatus.className = 'upload-status';
+
+  try {
+    // Step 1 — get signed params from server
+    var sigRes = await fetch('/admin/videos/upload-signature');
+    if (!sigRes.ok) throw new Error('Failed to get upload signature');
+    var sig = await sigRes.json();
+
+    // Step 2 — upload video directly to Cloudinary with XHR (for progress tracking)
+    var formData = new FormData();
+    formData.append('file',       videoFile);
+    formData.append('api_key',    sig.api_key);
+    formData.append('timestamp',  sig.timestamp);
+    formData.append('signature',  sig.signature);
+    formData.append('folder',     sig.folder);
+
+    var cloudinaryUrl = 'https://api.cloudinary.com/v1_1/' + sig.cloud_name + '/video/upload';
+
+    var result = await new Promise(function(resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', cloudinaryUrl);
+
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          var pct = Math.round((e.loaded / e.total) * 100);
+          progressFill.style.width = pct + '%';
+          progressLabel.textContent = pct + '%';
+        }
+      };
+
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          reject(new Error('Cloudinary upload failed: ' + xhr.status));
+        }
+      };
+
+      xhr.onerror = function() { reject(new Error('Network error during upload')); };
+      xhr.send(formData);
+    });
+
+    // Step 3 — fill hidden metadata form and submit to server
+    progressFill.style.width = '100%';
+    progressLabel.textContent = '100%';
+    uploadStatus.textContent = '✓ Upload done! Saving...';
+    uploadStatus.className = 'upload-status success';
+
+    document.getElementById('m_title').value       = document.getElementById('title').value;
+    document.getElementById('m_titleGuj').value    = document.getElementById('titleGuj').value;
+    document.getElementById('m_description').value = document.getElementById('description').value;
+    document.getElementById('m_category').value    = document.getElementById('category').value;
+    document.getElementById('m_videoUrl').value    = result.secure_url;
+    document.getElementById('m_publicId').value    = result.public_id;
+
+    // Copy thumbnail file to hidden form if selected
+    var thumbInput = document.getElementById('thumbnail');
+    if (thumbInput.files[0]) {
+      var dt = new DataTransfer();
+      dt.items.add(thumbInput.files[0]);
+      document.getElementById('m_thumbnail').files = dt.files;
+    }
+
+    document.getElementById('metaForm').submit();
+
+  } catch (err) {
+    uploadStatus.textContent = '✗ ' + err.message;
+    uploadStatus.className = 'upload-status error';
+    btn.disabled = false;
+    btn.textContent = 'Upload Video';
+  }
+});
+</script>
 
 </th:block>
 </html>

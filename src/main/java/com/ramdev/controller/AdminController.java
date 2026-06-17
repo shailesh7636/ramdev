@@ -3,10 +3,12 @@ package com.ramdev.controller;
 import com.ramdev.dto.CreateUserRequest;
 import com.ramdev.entity.User;
 import com.ramdev.repository.UserRepository;
+import com.ramdev.service.CloudinaryService;
 import com.ramdev.service.UserService;
 import com.ramdev.service.VideoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,14 +17,16 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
 public class AdminController {
 
-    private final UserService    userService;
-    private final VideoService   videoService;
-    private final UserRepository userRepository;
+    private final UserService      userService;
+    private final VideoService     videoService;
+    private final UserRepository   userRepository;
+    private final CloudinaryService cloudinaryService;
 
     // ════════════════════════════════════════════════════════════
     //  SUPER-ADMIN DASHBOARD  (/admin/super/dashboard)
@@ -145,19 +149,32 @@ public class AdminController {
         return "admin/videos";
     }
 
+    /** Returns Cloudinary signed upload params for direct browser upload */
+    @GetMapping("/admin/videos/upload-signature")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> uploadSignature() {
+        try {
+            return ResponseEntity.ok(cloudinaryService.generateSignature("ramdev/videos"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @PostMapping("/admin/videos/add")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public String addVideo(@RequestParam String title,
                            @RequestParam(required = false) String titleGuj,
                            @RequestParam(required = false) String description,
                            @RequestParam(required = false) String category,
-                           @RequestParam("videoFile") MultipartFile videoFile,
+                           @RequestParam("videoUrl")   String videoUrl,
+                           @RequestParam("publicId")   String publicId,
                            @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
                            Principal principal,
                            RedirectAttributes ra) {
         try {
-            videoService.addVideo(title, titleGuj, description, category,
-                                  videoFile, thumbnail, principal.getName());
+            videoService.addVideoFromCloudinary(title, titleGuj, description, category,
+                                                videoUrl, publicId, thumbnail, principal.getName());
             ra.addFlashAttribute("success", "Video uploaded successfully.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
