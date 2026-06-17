@@ -16,7 +16,10 @@
         <div class="field-group">
           <label>Mobile Number</label>
           <input type="tel" th:field="*{mobile}" placeholder="10-digit number"
-                 maxlength="10" inputmode="numeric" required/>
+                 maxlength="10" minlength="10" pattern="\d{10}"
+                 inputmode="numeric" required
+                 oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"
+                 title="Please enter exactly 10 digits"/>
         </div>
         <input type="hidden" th:field="*{role}" value="ADMIN"/>
         <button type="submit" class="btn-primary">Add Admin</button>
