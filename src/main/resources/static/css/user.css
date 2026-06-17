@@ -58,6 +58,7 @@ body {
   overflow: hidden; text-overflow: ellipsis;
 }
 .hdr-logout {
+  display: flex; align-items: center; gap: 6px;
   background: rgba(245,197,24,0.15);
   border: 1px solid rgba(245,197,24,0.3);
   color: var(--gold);

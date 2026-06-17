@@ -78,6 +78,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   margin-bottom: 10px;
   min-width: 0;
 }
+.user-pill-info {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
 .user-avatar {
   width: 34px; height: 34px;
   background: var(--blue);
@@ -89,8 +94,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .user-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .user-role { font-size: 10px; color: var(--gold); letter-spacing: 0.5px; }
 .logout-btn {
-  display: block; text-align: center;
-  padding: 9px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px;
   background: rgba(224,82,82,0.12);
   border: 1px solid rgba(224,82,82,0.25);
   border-radius: 8px;
@@ -99,6 +104,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   text-decoration: none;
   transition: background 0.2s;
   white-space: nowrap;
+  min-height: 40px;
 }
 .logout-btn:hover { background: rgba(224,82,82,0.2); }
 
