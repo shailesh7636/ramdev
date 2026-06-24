@@ -90,14 +90,14 @@
 
       <!-- Hidden form posted to server after Cloudinary upload -->
       <form id="metaForm" th:action="@{/admin/videos/add}" method="post"
-            enctype="multipart/form-data" style="display:none;">
+            style="display:none;">
         <input type="hidden" name="title"       id="m_title"/>
         <input type="hidden" name="titleGuj"    id="m_titleGuj"/>
         <input type="hidden" name="description" id="m_description"/>
         <input type="hidden" name="category"    id="m_category"/>
         <input type="hidden" name="videoUrl"    id="m_videoUrl"/>
         <input type="hidden" name="publicId"    id="m_publicId"/>
-        <input type="file"   name="thumbnail"   id="m_thumbnail" style="display:none;"/>
+        <input type="hidden" name="thumbUrl"    id="m_thumbUrl"/>
       </form>
     </div>
 
@@ -136,15 +136,14 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
   var videoFile = document.getElementById('videoFile').files[0];
   if (!videoFile) return;
 
-  var btn = document.getElementById('uploadBtn');
-  btn.disabled = true;
-  btn.textContent = 'Uploading...';
-
-  var progressWrap = document.getElementById('progressWrap');
-  var progressFill = document.getElementById('progressFill');
+  var btn           = document.getElementById('uploadBtn');
+  var progressWrap  = document.getElementById('progressWrap');
+  var progressFill  = document.getElementById('progressFill');
   var progressLabel = document.getElementById('progressLabel');
   var uploadStatus  = document.getElementById('uploadStatus');
 
+  btn.disabled = true;
+  btn.textContent = 'Uploading...';
   progressWrap.classList.add('show');
   uploadStatus.textContent = '';
   uploadStatus.className = 'upload-status';
@@ -155,20 +154,19 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
     if (!sigRes.ok) throw new Error('Failed to get upload signature');
     var sig = await sigRes.json();
 
-    // Step 2 — upload video directly to Cloudinary with XHR (for progress tracking)
-    var formData = new FormData();
-    formData.append('file',       videoFile);
-    formData.append('api_key',    sig.api_key);
-    formData.append('timestamp',  sig.timestamp);
-    formData.append('signature',  sig.signature);
-    formData.append('folder',     sig.folder);
+    // Step 2 — upload video directly to Cloudinary with progress tracking
+    var videoFormData = new FormData();
+    videoFormData.append('file',      videoFile);
+    videoFormData.append('api_key',   sig.api_key);
+    videoFormData.append('timestamp', sig.timestamp);
+    videoFormData.append('signature', sig.signature);
+    videoFormData.append('folder',    sig.folder);
 
-    var cloudinaryUrl = 'https://api.cloudinary.com/v1_1/' + sig.cloud_name + '/video/upload';
+    var cloudinaryBase = 'https://api.cloudinary.com/v1_1/' + sig.cloud_name;
 
-    var result = await new Promise(function(resolve, reject) {
+    var videoResult = await new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', cloudinaryUrl);
-
+      xhr.open('POST', cloudinaryBase + '/video/upload');
       xhr.upload.onprogress = function(e) {
         if (e.lengthComputable) {
           var pct = Math.round((e.loaded / e.total) * 100);
@@ -176,20 +174,50 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
           progressLabel.textContent = pct + '%';
         }
       };
-
       xhr.onload = function() {
-        if (xhr.status === 200) {
-          resolve(JSON.parse(xhr.responseText));
-        } else {
-          reject(new Error('Cloudinary upload failed: ' + xhr.status));
-        }
+        if (xhr.status === 200) resolve(JSON.parse(xhr.responseText));
+        else reject(new Error('Video upload failed: ' + xhr.status));
       };
-
       xhr.onerror = function() { reject(new Error('Network error during upload')); };
-      xhr.send(formData);
+      xhr.send(videoFormData);
     });
 
-    // Step 3 — fill hidden metadata form and submit to server
+    // Step 3 — upload thumbnail directly to Cloudinary if selected
+    var thumbUrl = '';
+    var thumbFile = document.getElementById('thumbnail').files[0];
+    if (thumbFile) {
+      uploadStatus.textContent = 'Uploading thumbnail...';
+      uploadStatus.className = 'upload-status';
+
+      // get fresh signature for image upload
+      var thumbSigRes = await fetch('/admin/videos/upload-signature?type=image');
+      if (!thumbSigRes.ok) throw new Error('Failed to get thumbnail signature');
+      var thumbSig = await thumbSigRes.json();
+
+      var thumbFormData = new FormData();
+      thumbFormData.append('file',      thumbFile);
+      thumbFormData.append('api_key',   thumbSig.api_key);
+      thumbFormData.append('timestamp', thumbSig.timestamp);
+      thumbFormData.append('signature', thumbSig.signature);
+      thumbFormData.append('folder',    thumbSig.folder);
+
+      var thumbResult = await new Promise(function(resolve, reject) {
+        var xhr2 = new XMLHttpRequest();
+        xhr2.open('POST', cloudinaryBase + '/image/upload');
+        xhr2.onload = function() {
+          if (xhr2.status === 200) resolve(JSON.parse(xhr2.responseText));
+          else resolve(null); // non-fatal
+        };
+        xhr2.onerror = function() { resolve(null); }; // non-fatal
+        xhr2.send(thumbFormData);
+      });
+
+      if (thumbResult && thumbResult.secure_url) {
+        thumbUrl = thumbResult.secure_url;
+      }
+    }
+
+    // Step 4 — submit metadata to server
     progressFill.style.width = '100%';
     progressLabel.textContent = '100%';
     uploadStatus.textContent = '✓ Upload done! Saving...';
@@ -199,16 +227,9 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
     document.getElementById('m_titleGuj').value    = document.getElementById('titleGuj').value;
     document.getElementById('m_description').value = document.getElementById('description').value;
     document.getElementById('m_category').value    = document.getElementById('category').value;
-    document.getElementById('m_videoUrl').value    = result.secure_url;
-    document.getElementById('m_publicId').value    = result.public_id;
-
-    // Copy thumbnail file to hidden form if selected
-    var thumbInput = document.getElementById('thumbnail');
-    if (thumbInput.files[0]) {
-      var dt = new DataTransfer();
-      dt.items.add(thumbInput.files[0]);
-      document.getElementById('m_thumbnail').files = dt.files;
-    }
+    document.getElementById('m_videoUrl').value    = videoResult.secure_url;
+    document.getElementById('m_publicId').value    = videoResult.public_id;
+    document.getElementById('m_thumbUrl').value    = thumbUrl;
 
     document.getElementById('metaForm').submit();
 

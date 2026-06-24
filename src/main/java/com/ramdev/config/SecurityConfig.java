@@ -2,7 +2,6 @@ package com.ramdev.config;
 
 import com.ramdev.security.JwtAuthFilter;
 import com.ramdev.security.UserDetailsServiceImpl;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,11 +12,14 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserCache;
+import org.springframework.security.core.userdetails.cache.SpringCacheBasedUserCache;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.cache.concurrent.ConcurrentMapCache;
 
 @Configuration
 @EnableWebSecurity
@@ -29,15 +31,21 @@ public class SecurityConfig {
     private final JwtAuthFilter          jwtAuthFilter;
 
     @Bean
+    public UserCache userCache() throws Exception {
+        return new SpringCacheBasedUserCache(new ConcurrentMapCache("userCache"));
+    }
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(6);
     }
 
     @Bean
-    public DaoAuthenticationProvider authProvider() {
+    public DaoAuthenticationProvider authProvider() throws Exception {
         var p = new DaoAuthenticationProvider();
         p.setUserDetailsService(userDetailsService);
         p.setPasswordEncoder(passwordEncoder());
+        p.setUserCache(userCache());
         return p;
     }
 

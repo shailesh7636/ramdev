@@ -6,9 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,19 +39,6 @@ public class CloudinaryService {
         result.put("api_key",    apiKey);
         result.put("cloud_name", cloudName);
         result.put("folder",     folder);
-        return result;
-    }
-
-    public Map<String, Object> uploadThumbnail(MultipartFile file) throws IOException {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> result = cloudinary.uploader().upload(
-                file.getInputStream(),
-                ObjectUtils.asMap(
-                        "resource_type", "image",
-                        "folder",        "ramdev/thumbnails"
-                )
-        );
-        log.info("Cloudinary thumbnail upload success — public_id: {}", result.get("public_id"));
         return result;
     }
 

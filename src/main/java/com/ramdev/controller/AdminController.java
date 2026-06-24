@@ -13,7 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
@@ -153,9 +152,11 @@ public class AdminController {
     @GetMapping("/admin/videos/upload-signature")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> uploadSignature() {
+    public ResponseEntity<Map<String, Object>> uploadSignature(
+            @RequestParam(value = "type", defaultValue = "video") String type) {
         try {
-            return ResponseEntity.ok(cloudinaryService.generateSignature("ramdev/videos"));
+            String folder = "image".equals(type) ? "ramdev/thumbnails" : "ramdev/videos";
+            return ResponseEntity.ok(cloudinaryService.generateSignature(folder));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -167,14 +168,16 @@ public class AdminController {
                            @RequestParam(required = false) String titleGuj,
                            @RequestParam(required = false) String description,
                            @RequestParam(required = false) String category,
-                           @RequestParam("videoUrl")   String videoUrl,
-                           @RequestParam("publicId")   String publicId,
-                           @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+                           @RequestParam("videoUrl")  String videoUrl,
+                           @RequestParam("publicId")  String publicId,
+                           @RequestParam(value = "thumbUrl", required = false, defaultValue = "") String thumbUrl,
                            Principal principal,
                            RedirectAttributes ra) {
         try {
             videoService.addVideoFromCloudinary(title, titleGuj, description, category,
-                                                videoUrl, publicId, thumbnail, principal.getName());
+                                                videoUrl, publicId,
+                                                thumbUrl.isBlank() ? null : thumbUrl,
+                                                principal.getName());
             ra.addFlashAttribute("success", "Video uploaded successfully.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());

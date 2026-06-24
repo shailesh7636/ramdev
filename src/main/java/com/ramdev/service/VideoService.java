@@ -9,11 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -34,25 +31,13 @@ public class VideoService {
     }
 
     /**
-     * Saves video metadata after browser has uploaded the video directly to Cloudinary.
-     * Server never touches the video file — only saves title, url, public_id to DB.
-     * Thumbnail is still uploaded via server (small file, fast).
+     * Saves video metadata after browser has uploaded video + thumbnail
+     * directly to Cloudinary. Server never touches any file.
      */
     @Transactional
     public Video addVideoFromCloudinary(String title, String titleGuj, String description,
                                         String category, String videoUrl, String publicId,
-                                        MultipartFile thumbnail, String uploaderMobile) throws IOException {
-
-        // Upload thumbnail via server (small image, fast)
-        String thumbUrl = null;
-        if (thumbnail != null && !thumbnail.isEmpty()) {
-            try {
-                Map<String, Object> thumbResult = cloudinaryService.uploadThumbnail(thumbnail);
-                thumbUrl = (String) thumbResult.get("secure_url");
-            } catch (IOException e) {
-                log.warn("Thumbnail upload failed (video will still be saved): {}", e.getMessage());
-            }
-        }
+                                        String thumbUrl, String uploaderMobile) {
 
         User uploader = userRepository.findByMobile(uploaderMobile).orElse(null);
 
@@ -63,7 +48,7 @@ public class VideoService {
         v.setCategory(category);
         v.setFilePath(videoUrl);
         v.setCloudinaryPublicId(publicId);
-        v.setThumbnail(thumbUrl);
+        v.setThumbnail((thumbUrl != null && !thumbUrl.isBlank()) ? thumbUrl : null);
         v.setUploadedBy(uploader);
 
         try {
@@ -71,7 +56,7 @@ public class VideoService {
             log.info("Video '{}' saved (Cloudinary id: {})", title, publicId);
             return saved;
         } catch (DataAccessException dbEx) {
-            log.error("DB insert failed for '{}', rolling back Cloudinary asset: {}", title, dbEx.getMessage());
+            log.error("DB insert failed for '{}', rolling back Cloudinary asset: {}", title, dbEx.getMessage(), dbEx);
             cloudinaryService.deleteVideo(publicId);
             throw new RuntimeException("Failed to save video metadata. Cloudinary upload rolled back.", dbEx);
         }
