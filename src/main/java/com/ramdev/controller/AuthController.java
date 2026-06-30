@@ -25,6 +25,7 @@ public class AuthController {
     private final AuthService    authService;
     private final UserRepository userRepository;
     private final UserService    userService;
+    private final CookieConfig   cookieConfig;
 
     /** Root → login page */
     @GetMapping("/")
@@ -64,29 +65,20 @@ public class AuthController {
         try {
             AuthService.LoginResult result = authService.login(req);
 
-            // Secure, HttpOnly cookie with SameSite=Strict — JS cannot read it
+            // Secure, HttpOnly cookie with configurable settings
             Cookie cookie = new Cookie("JWT", result.token());
             cookie.setHttpOnly(true);
-            cookie.setSecure(true);          // HTTPS on Render
+            cookie.setSecure(cookieConfig.isSecure());
             cookie.setPath("/");
             cookie.setMaxAge(7 * 24 * 3600); // 7 days
-            cookie.setAttribute("SameSite", "Strict");
+            cookie.setAttribute("SameSite", cookieConfig.getSameSite());
             response.addCookie(cookie);
 
-            // Role-based redirect — read from Authentication (no extra DB call)
-            String primaryRole = result.auth().getAuthorities().stream()
-                .map(a -> a.getAuthority())
-                .filter(a -> a.startsWith("ROLE_"))
-                .map(a -> a.replace("ROLE_", ""))
-                .findFirst().orElse("USER");
+            // Set SecurityContext immediately for redirect
+            SecurityContextHolder.getContext().setAuthentication(result.auth());
 
-            String destination = switch (primaryRole) {
-                case "SUPER_ADMIN" -> "/admin/super/dashboard";
-                case "ADMIN"       -> "/admin/dashboard";
-                default            -> "/user/home";
-            };
-
-            return "redirect:" + destination;
+            // Redirect to generic dashboard - let DashboardRedirectController handle role-based routing
+            return "redirect:/dashboard";
 
         } catch (BadCredentialsException ex) {
             model.addAttribute("error", "Invalid mobile number and password.");

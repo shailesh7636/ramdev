@@ -87,7 +87,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // ── Public ──────────────────────────────────────────
                 .requestMatchers(
-                    "/", "/login", "/logout", "/health",
+                    "/", "/login", "/logout", "/health", "/dashboard",
                     "/access-denied", "/privacy-policy", "/delete-account",
                     "/css/**", "/js/**", "/images/**",
                     "/favicon.ico", "/error"
