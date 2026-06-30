@@ -75,12 +75,13 @@ public class AuthController {
             cookie.setPath("/");
             cookie.setMaxAge(7 * 24 * 3600); // 7 days
             cookie.setAttribute("SameSite", cookieConfig.getSameSite());
+            // For mobile browsers, don't set domain to allow more flexible cookie handling
             response.addCookie(cookie);
 
             // Set SecurityContext immediately for redirect
             SecurityContextHolder.getContext().setAuthentication(result.auth());
 
-            // Redirect directly to role-specific dashboard to avoid mobile app cookie issues
+            // Determine redirect URL based on role
             String mobile = result.auth().getName();
             User user = userRepository.findByMobileWithRoles(mobile).orElse(null);
             
@@ -88,13 +89,18 @@ public class AuthController {
                 return "redirect:/login";
             }
 
+            String redirectUrl;
             if (user.hasRole("SUPER_ADMIN")) {
-                return "redirect:/admin/super/dashboard";
+                redirectUrl = "/admin/super/dashboard";
             } else if (user.hasRole("ADMIN")) {
-                return "redirect:/admin/dashboard";
+                redirectUrl = "/admin/dashboard";
             } else {
-                return "redirect:/user/home";
+                redirectUrl = "/user/home";
             }
+
+            // Return redirect page with JavaScript for reliable mobile browser cookie handling
+            model.addAttribute("redirectUrl", redirectUrl);
+            return "auth/redirect";
 
         } catch (BadCredentialsException ex) {
             model.addAttribute("error", "Invalid mobile number and password.");
