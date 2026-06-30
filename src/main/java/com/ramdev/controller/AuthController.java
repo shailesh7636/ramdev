@@ -2,6 +2,7 @@ package com.ramdev.controller;
 
 import com.ramdev.config.CookieConfig;
 import com.ramdev.dto.LoginRequest;
+import com.ramdev.dto.LoginResponse;
 import com.ramdev.entity.User;
 import com.ramdev.repository.UserRepository;
 import com.ramdev.service.AuthService;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -78,8 +80,21 @@ public class AuthController {
             // Set SecurityContext immediately for redirect
             SecurityContextHolder.getContext().setAuthentication(result.auth());
 
-            // Redirect to generic dashboard - let DashboardRedirectController handle role-based routing
-            return "redirect:/dashboard";
+            // Redirect directly to role-specific dashboard to avoid mobile app cookie issues
+            String mobile = result.auth().getName();
+            User user = userRepository.findByMobileWithRoles(mobile).orElse(null);
+            
+            if (user == null) {
+                return "redirect:/login";
+            }
+
+            if (user.hasRole("SUPER_ADMIN")) {
+                return "redirect:/admin/super/dashboard";
+            } else if (user.hasRole("ADMIN")) {
+                return "redirect:/admin/dashboard";
+            } else {
+                return "redirect:/user/home";
+            }
 
         } catch (BadCredentialsException ex) {
             model.addAttribute("error", "Invalid mobile number and password.");
@@ -103,6 +118,53 @@ public class AuthController {
     @GetMapping("/privacy-policy")
     public String privacyPolicy() {
         return "privacy-policy";
+    }
+
+    /**
+     * Mobile App Login API - Returns JSON with JWT token
+     * This endpoint is designed for mobile apps that don't use cookie-based auth
+     */
+    @PostMapping("/api/login")
+    public ResponseEntity<?> mobileLogin(@Valid @RequestBody LoginRequest req,
+                                         BindingResult bindingResult) {
+        // Bean-validation errors
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest()
+                .body(new LoginResponse(null, null, null, null, "Invalid mobile number and password."));
+        }
+
+        try {
+            AuthService.LoginResult result = authService.login(req);
+            
+            // Get user details for redirect URL
+            String mobile = result.auth().getName();
+            User user = userRepository.findByMobileWithRoles(mobile).orElse(null);
+            
+            if (user == null) {
+                return ResponseEntity.badRequest()
+                    .body(new LoginResponse(null, null, null, null, "User not found."));
+            }
+
+            // Determine redirect URL based on role
+            String redirectUrl;
+            String role;
+            if (user.hasRole("SUPER_ADMIN")) {
+                redirectUrl = "/admin/super/dashboard";
+                role = "SUPER_ADMIN";
+            } else if (user.hasRole("ADMIN")) {
+                redirectUrl = "/admin/dashboard";
+                role = "ADMIN";
+            } else {
+                redirectUrl = "/user/home";
+                role = "USER";
+            }
+
+            return ResponseEntity.ok(new LoginResponse(result.token(), mobile, role, redirectUrl, "Login successful"));
+
+        } catch (BadCredentialsException ex) {
+            return ResponseEntity.status(401)
+                .body(new LoginResponse(null, null, null, null, "Invalid mobile number and password."));
+        }
     }
 
     /** Delete Account page — public */
