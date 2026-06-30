@@ -72,7 +72,7 @@ public class SecurityConfig {
             // Enable CSRF protection for production security
             .csrf(csrf -> csrf
                 .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers("/stream/**", "/api/**") // Only ignore for API endpoints
+                .ignoringRequestMatchers("/stream/**", "/api/**", "/admin/videos/**", "/admin/users/**", "/admin/super/**") // Ignore CSRF for admin operations
             )
             .headers(h -> h
                 .frameOptions(f -> f.sameOrigin())

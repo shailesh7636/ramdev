@@ -207,6 +207,6 @@ public class AdminController {
 
     // ── helper ───────────────────────────────────────────────────
     private User currentUser(Principal principal) {
-        return userRepository.findByMobile(principal.getName()).orElseThrow();
+        return userRepository.findByMobileWithRoles(principal.getName()).orElseThrow();
     }
 }

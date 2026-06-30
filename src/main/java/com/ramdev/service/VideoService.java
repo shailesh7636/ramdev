@@ -6,6 +6,7 @@ import com.ramdev.repository.UserRepository;
 import com.ramdev.repository.VideoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
@@ -48,6 +49,7 @@ public class VideoService {
      * directly to Cloudinary. Server never touches any file.
      */
     @Transactional
+    @CacheEvict(value = "recentVideos", allEntries = true)
     public Video addVideoFromCloudinary(String title, String titleGuj, String description,
                                         String category, String videoUrl, String publicId,
                                         String thumbUrl, String uploaderMobile) {
@@ -79,6 +81,7 @@ public class VideoService {
      * Deletes the Cloudinary asset first, then removes the DB record.
      */
     @Transactional
+    @CacheEvict(value = "recentVideos", allEntries = true)
     public void deleteVideo(Long id) {
         Video v = findById(id);
         cloudinaryService.deleteVideo(v.getCloudinaryPublicId());
