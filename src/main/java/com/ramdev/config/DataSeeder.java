@@ -59,8 +59,8 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedDefaultUser(String mobile, String name, String roleName) {
         // Skip entirely if user already exists — avoids BCrypt encode on every restart
-        if (userRepository.findByMobile(mobile).isPresent()) {
-            log.info("[DataSeeder] {} already exists, skipping → mobile: {}", roleName, mobile);
+        if (userRepository.existsByMobile(mobile)) {
+            log.debug("[DataSeeder] {} already exists, skipping → mobile: {}", roleName, mobile);
             return;
         }
 

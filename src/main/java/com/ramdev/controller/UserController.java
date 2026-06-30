@@ -4,6 +4,7 @@ import com.ramdev.entity.User;
 import com.ramdev.entity.Video;
 import com.ramdev.repository.UserRepository;
 import com.ramdev.service.VideoService;
+import com.ramdev.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -34,16 +35,18 @@ public class UserController {
     @GetMapping("/home")
     @PreAuthorize("hasRole('USER')")
     public String home(Model model, Principal principal) {
-        User me = userRepository.findByMobile(principal.getName()).orElseThrow();
+        String mobile = SecurityUtils.sanitizeHtml(principal.getName());
+        User me = userRepository.findByMobileWithRoles(mobile).orElseThrow();
         model.addAttribute("me",     me);
-        model.addAttribute("videos", videoService.getAllVideos());
+        model.addAttribute("videos", videoService.getAllVideosOptimized());
         return "user/home";
     }
 
     @GetMapping("/watch/{id}")
     @PreAuthorize("hasRole('USER')")
     public String watch(@PathVariable Long id, Model model, Principal principal) {
-        User  me    = userRepository.findByMobile(principal.getName()).orElseThrow();
+        String mobile = SecurityUtils.sanitizeHtml(principal.getName());
+        User  me    = userRepository.findByMobileWithRoles(mobile).orElseThrow();
         Video video = videoService.findById(id);
         model.addAttribute("me",    me);
         model.addAttribute("video", video);
@@ -53,7 +56,8 @@ public class UserController {
     @GetMapping("/contact")
     @PreAuthorize("hasRole('USER')")
     public String contact(Model model, Principal principal) {
-        User me = userRepository.findByMobile(principal.getName()).orElseThrow();
+        String mobile = SecurityUtils.sanitizeHtml(principal.getName());
+        User me = userRepository.findByMobileWithRoles(mobile).orElseThrow();
         model.addAttribute("me", me);
         return "user/contact";
     }

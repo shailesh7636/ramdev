@@ -69,14 +69,25 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .headers(h -> h.frameOptions(f -> f.sameOrigin()))
+            // Enable CSRF protection for production security
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .ignoringRequestMatchers("/stream/**", "/api/**") // Only ignore for API endpoints
+            )
+            .headers(h -> h
+                .frameOptions(f -> f.sameOrigin())
+                .contentTypeOptions(c -> c.disable()) // Prevent MIME type sniffing
+                .httpStrictTransportSecurity(hstsConfig -> hstsConfig
+                    .maxAgeInSeconds(31536000)
+                    .includeSubDomains(true)
+                )
+            )
             // Stateless — JWT cookie carries all auth state
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // ── Public ──────────────────────────────────────────
                 .requestMatchers(
-                    "/", "/login", "/logout",
+                    "/", "/login", "/logout", "/health",
                     "/access-denied", "/privacy-policy", "/delete-account",
                     "/css/**", "/js/**", "/images/**",
                     "/favicon.ico", "/error"
