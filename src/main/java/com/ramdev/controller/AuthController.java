@@ -1,5 +1,6 @@
 package com.ramdev.controller;
 
+import com.ramdev.config.CookieConfig;
 import com.ramdev.dto.LoginRequest;
 import com.ramdev.entity.User;
 import com.ramdev.repository.UserRepository;
@@ -25,7 +26,7 @@ public class AuthController {
     private final AuthService    authService;
     private final UserRepository userRepository;
     private final UserService    userService;
-    private final CookieConfig   cookieConfig;
+    private final CookieConfig cookieConfig;
 
     /** Root → login page */
     @GetMapping("/")
