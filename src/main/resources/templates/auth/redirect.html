@@ -57,15 +57,15 @@
     </div>
 
     <script>
-        // Small delay to ensure cookie is set before redirect
+        // Use replace() so back button doesn't return to this page
         setTimeout(function() {
-            window.location.href = /*[[${redirectUrl}]]*/ '/dashboard';
-        }, 500);
+            window.location.replace(/*[[${redirectUrl}]]*/ '/dashboard');
+        }, 800);
 
-        // Show manual link after 3 seconds if redirect doesn't work
+        // Show manual link after 4 seconds if redirect doesn't work
         setTimeout(function() {
             document.getElementById('manualLink').style.display = 'block';
-        }, 3000);
+        }, 4000);
     </script>
 </body>
 </html>

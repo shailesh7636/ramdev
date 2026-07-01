@@ -208,14 +208,21 @@ public class AuthController {
      */
     @GetMapping("/access-denied")
     public String accessDenied(HttpServletRequest request, Model model) {
-        // Try to figure out where to send them back
         var auth = SecurityContextHolder.getContext().getAuthentication();
         String home = "/login";
         if (auth != null && auth.isAuthenticated()
                 && !"anonymousUser".equals(auth.getPrincipal())) {
+            boolean isSuperAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
             boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().contains("ADMIN"));
-            home = isAdmin ? "/admin/dashboard" : "/user/home";
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            if (isSuperAdmin) {
+                home = "/admin/super/dashboard";
+            } else if (isAdmin) {
+                home = "/admin/dashboard";
+            } else {
+                home = "/user/home";
+            }
         }
         model.addAttribute("homeUrl", home);
         return "auth/access-denied";

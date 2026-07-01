@@ -14,4 +14,4 @@ COPY --from=build /app/target/ramdev-thresher-1.0.0.jar app.jar
 
 EXPOSE 8080
 
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
