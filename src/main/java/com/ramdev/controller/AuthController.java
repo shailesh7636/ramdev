@@ -115,6 +115,9 @@ public class AuthController {
         Cookie cookie = new Cookie("JWT", "");
         cookie.setMaxAge(0);
         cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(cookieConfig.isSecure());
+        cookie.setAttribute("SameSite", cookieConfig.getSameSite());
         response.addCookie(cookie);
         SecurityContextHolder.clearContext();
         return "redirect:/login?logout";

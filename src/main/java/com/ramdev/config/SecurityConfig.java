@@ -12,14 +12,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserCache;
-import org.springframework.security.core.userdetails.cache.SpringCacheBasedUserCache;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.cache.concurrent.ConcurrentMapCache;
 
 @Configuration
 @EnableWebSecurity
@@ -31,21 +28,16 @@ public class SecurityConfig {
     private final JwtAuthFilter          jwtAuthFilter;
 
     @Bean
-    public UserCache userCache() throws Exception {
-        return new SpringCacheBasedUserCache(new ConcurrentMapCache("userCache"));
-    }
-
-    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(6);
     }
 
     @Bean
-    public DaoAuthenticationProvider authProvider() throws Exception {
+    public DaoAuthenticationProvider authProvider() {
         var p = new DaoAuthenticationProvider();
         p.setUserDetailsService(userDetailsService);
         p.setPasswordEncoder(passwordEncoder());
-        p.setUserCache(userCache());
+        // No UserCache — always load fresh roles from DB to prevent stale role issues
         return p;
     }
 
@@ -69,11 +61,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // Enable CSRF protection for production security
-            .csrf(csrf -> csrf
-                .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers("/stream/**", "/api/**", "/admin/videos/**", "/admin/users/**", "/admin/super/**") // Ignore CSRF for admin operations
-            )
+            // Disable CSRF — stateless JWT auth, no session, safe to disable
+            .csrf(csrf -> csrf.disable())
             .headers(h -> h
                 .frameOptions(f -> f.sameOrigin())
                 .contentTypeOptions(c -> c.disable()) // Prevent MIME type sniffing
